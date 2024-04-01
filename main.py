@@ -1,25 +1,22 @@
 from pydantic.json_schema import SkipJsonSchema
-from typing import Union
+from typing import Annotated
 
 from fastapi import Body, FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 app = FastAPI()
 
 
 class Item(BaseModel):
     name: str
-    description: Union[str, SkipJsonSchema[None]] = None
-    price: float
-    tax: Union[float, SkipJsonSchema[None]] = None
-
-
-class User(BaseModel):
-    username: str
-    full_name: Union[str, SkipJsonSchema[None]] = None
+    description: str | SkipJsonSchema[None] = Field(
+        default=None, title="The description of the item", max_length=300
+    )
+    price: float = Field(gt=0, description="The price must be greater than zero")
+    tax: float | SkipJsonSchema[None] = None
 
 
 @app.put("/items/{item_id}")
-async def update_item(item_id: int, item: Item, user: User, importance: int = Body()):
-    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+async def update_item(item_id: int, item: Annotated[Item, Body(embed=True)]):
+    results = {"item_id": item_id, "item": item}
     return results
