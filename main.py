@@ -1,23 +1,10 @@
 from pydantic.json_schema import SkipJsonSchema
 # SkipJsonSchema[None]
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List
+from fastapi import FastAPI, status
 
 app = FastAPI()
 
 
-class Item(BaseModel):
-    name: str
-    description: str
-
-
-items = [
-    {"name": "Foo", "description": "There comes my hero"},
-    {"name": "Red", "description": "It's my aeroplane"},
-]
-
-
-@app.get("/items/", response_model=List[Item])
-async def read_items():
-    return items
+@app.post("/items/", status_code=status.HTTP_201_CREATED)
+async def create_item(name: str):
+    return {"name": name}
