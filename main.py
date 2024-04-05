@@ -1,30 +1,16 @@
-from pydantic.json_schema import SkipJsonSchema
-# SkipJsonSchema[None]
 from fastapi import FastAPI, HTTPException
-from fastapi.exception_handlers import (
-    http_exception_handler,
-    request_validation_exception_handler,
-)
-from fastapi.exceptions import RequestValidationError
-from starlette.exceptions import HTTPException as StarletteHTTPException
+from pydantic import BaseModel
+
+class ErrorResponse(BaseModel):
+    detail: str
 
 app = FastAPI()
 
-
-@app.exception_handler(StarletteHTTPException)
-async def custom_http_exception_handler(request, exc):
-    print(f"OMG! An HTTP error!: {repr(exc)}")
-    return await http_exception_handler(request, exc)
+items = {"foo": "The Foo Wrestlers"}
 
 
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request, exc):
-    print(f"OMG! The client sent invalid data!: {exc}")
-    return await request_validation_exception_handler(request, exc)
-
-
-@app.get("/items/{item_id}")
-async def read_item(item_id: int):
-    if item_id == 3:
-        raise HTTPException(status_code=418, detail="Nope! I don't like 3.")
-    return {"item_id": item_id}
+@app.get("/items/{item_id}", responses={404: {"model": ErrorResponse}})
+async def read_item(item_id: str):
+    if item_id not in items:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"item": items[item_id]}
