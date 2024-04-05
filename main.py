@@ -1,40 +1,55 @@
 from pydantic.json_schema import SkipJsonSchema
 # SkipJsonSchema[None]
-from typing import List, Set, Union, Dict
+from typing import Annotated
 
-from fastapi import FastAPI, Body
-from pydantic import BaseModel, HttpUrl
+from fastapi import Body, FastAPI
+from pydantic import BaseModel
 
 app = FastAPI()
 
 
-class Image(BaseModel):
-    url: HttpUrl
-    name: str
-
-
 class Item(BaseModel):
     name: str
-    description: Union[str, SkipJsonSchema[None]] = None
+    description: str | SkipJsonSchema[None] = None
     price: float
-    tax: Union[float, SkipJsonSchema[None]] = None
-    tags: Set[str] = set()
-    images: Union[List[Image], SkipJsonSchema[None]] = None
+    tax: float | SkipJsonSchema[None] = None
 
 
-class Offer(BaseModel):
-    name: str
-    description: Union[str, SkipJsonSchema[None]] = None
-    price: float
-    items: List[Item]
-
-
-@app.post("/offers/")
-async def create_offer(offer: Offer = Body(embed=True)):
-    return offer
-
-
-@app.post("/index-weights/")
-async def create_index_weights(weights: Dict[int, float]):
-    return weights
-
+@app.put("/items/{item_id}")
+async def update_item(
+    item_id: int,
+    item: Annotated[
+        Item,
+        Body(
+            openapi_examples={
+                "normal": {
+                    "summary": "A normal example",
+                    "description": "A **normal** item works correctly.",
+                    "value": {
+                        "name": "Foo",
+                        "description": "A very nice Item",
+                        "price": 35.4,
+                        "tax": 3.2,
+                    },
+                },
+                "converted": {
+                    "summary": "An example with converted data",
+                    "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+                    "value": {
+                        "name": "Bar",
+                        "price": "35.4",
+                    },
+                },
+                "invalid": {
+                    "summary": "Invalid data is rejected with an error",
+                    "value": {
+                        "name": "Baz",
+                        "price": "thirty five point four",
+                    },
+                },
+            },
+        ),
+    ],
+):
+    results = {"item_id": item_id, "item": item}
+    return results
