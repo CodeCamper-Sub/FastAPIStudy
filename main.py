@@ -1,16 +1,27 @@
 from pydantic.json_schema import SkipJsonSchema
 # SkipJsonSchema[None]
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+
+class UnicornException(Exception):
+    def __init__(self, name: str):
+        self.name = name
+
 
 app = FastAPI()
 
 
-@app.post("/files/")
-async def create_file(
-    file: bytes = File(), fileb: UploadFile = File(), token: str = Form()
-):
-    return {
-        "file_size": len(file),
-        "token": token,
-        "fileb_content_type": fileb.content_type,
-    }
+@app.exception_handler(UnicornException)
+async def unicorn_exception_handler(request: Request, exc: UnicornException):
+    return JSONResponse(
+        status_code=418,
+        content={"message": f"Oops! {exc.name} did something. There goes a rainbow..."},
+    )
+
+
+@app.get("/unicorns/{name}")
+async def read_unicorn(name: str):
+    if name == "yolo":
+        raise UnicornException(name=name)
+    return {"unicorn_name": name}
