@@ -1,4 +1,5 @@
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from operator import or_
+from sqlmodel import Field, Session, SQLModel, col, create_engine, select
 
 
 class Hero(SQLModel, table=True):
@@ -22,57 +23,29 @@ def create_heroes():
     hero_1 = Hero(name="Deadpond", secret_name="Dive Wilson")
     hero_2 = Hero(name="Spider-Boy", secret_name="Pedro Parqueador")
     hero_3 = Hero(name="Rusty-Man", secret_name="Tommy Sharp", age=48)
-
-    print("Before interacting with the database")
-    print("Hero 1:", hero_1)
-    print("Hero 2:", hero_2)
-    print("Hero 3:", hero_3)
+    hero_4 = Hero(name="Tarantula", secret_name="Natalia Roman-on", age=32)
+    hero_5 = Hero(name="Black Lion", secret_name="Trevor Challa", age=35)
+    hero_6 = Hero(name="Dr. Weird", secret_name="Steve Weird", age=36)
+    hero_7 = Hero(name="Captain North America", secret_name="Esteban Rogelios", age=93)
 
     with Session(engine) as session:
-        session = Session(engine)
-
-        session.add_all([hero_1, hero_2, hero_3])
-        print("After adding to the session")
-        print("Hero 1:", hero_1)
-        print("Hero 2:", hero_2)
-        print("Hero 3:", hero_3)
+        session.add(hero_1)
+        session.add(hero_2)
+        session.add(hero_3)
+        session.add(hero_4)
+        session.add(hero_5)
+        session.add(hero_6)
+        session.add(hero_7)
 
         session.commit()
-        print("After committing the session")
-        print("Hero 1:", hero_1)
-        print("Hero 2:", hero_2)
-        print("Hero 3:", hero_3)
-
-        print("After committing the session, show IDs")
-        print("Hero 1 ID:", hero_1.id)
-        print("Hero 2 ID:", hero_2.id)
-        print("Hero 3 ID:", hero_3.id)
-
-        print("After committing the session, show names")
-        print("Hero 1 name:", hero_1.name)
-        print("Hero 2 name:", hero_2.name)
-        print("Hero 3 name:", hero_3.name)
-
-        session.refresh(hero_1)
-        session.refresh(hero_2)
-        session.refresh(hero_3)
-
-        print("After refreshing the heroes")
-        print("Hero 1:", hero_1)
-        print("Hero 2:", hero_2)
-        print("Hero 3:", hero_3)
-
-    print("After the session closes")
-    print("Hero 1:", hero_1)
-    print("Hero 2:", hero_2)
-    print("Hero 3:", hero_3)
 
 
 def select_heroes():
     with Session(engine) as session:
-        statement = select(Hero)
-        heroes = session.exec(statement).all()
-        print(heroes)
+        # statement = select(Hero).where(or_(Hero.age <= 35, Hero.age > 90))
+        statement = select(Hero).where(col(Hero.age) >= 35)
+        for hero in session.exec(statement).all():
+            print(hero)
 
 
 def main():
