@@ -1,12 +1,11 @@
-from operator import or_
-from sqlmodel import Field, Session, SQLModel, col, create_engine, select
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
 class Hero(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    name: str
+    name: str = Field(index=True)
     secret_name: str
-    age: int | None = None
+    age: int | None = Field(default=None, index=True)
 
 
 sqlite_file_name = "database.db"
@@ -42,8 +41,7 @@ def create_heroes():
 
 def select_heroes():
     with Session(engine) as session:
-        # statement = select(Hero).where(or_(Hero.age <= 35, Hero.age > 90))
-        statement = select(Hero).where(col(Hero.age) >= 35)
+        statement = select(Hero).where(Hero.name == "Deadpond")
         for hero in session.exec(statement).all():
             print(hero)
 
