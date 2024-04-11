@@ -41,9 +41,9 @@ def create_heroes():
 
 def select_heroes():
     with Session(engine) as session:
-        # hero = session.exec(select(Hero).where(Hero.name == "Deadpond")).one()
-        hero = session.get(Hero, 1)
-        print("Hero:", hero)
+        statement = select(Hero).where(Hero.age > 32).offset(1).limit(2)
+        for hero in session.exec(statement).all():
+            print(hero)
 
 
 def main():
