@@ -129,7 +129,7 @@ def remove_connection():
         hero_spider_boy = session.exec(
             select(Hero).where(Hero.name == "Spider-Boy")
         ).one()
-        hero_spider_boy.team_id = None
+        hero_spider_boy.team = None
         session.add(hero_spider_boy)
         session.commit()
         session.refresh(hero_spider_boy)
@@ -141,7 +141,7 @@ def main():
     create_heroes()
     update_heroes()
     select_heroes()
-    # remove_connection()
+    remove_connection()
 
 
 if __name__ == "__main__":
