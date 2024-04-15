@@ -70,10 +70,26 @@ def select_heroes():
             print("Hero:", hero)
 
 
+def update_heroes():
+    with Session(engine) as session:
+        hero_spider_boy = session.exec(
+            select(Hero).where(Hero.name == "Spider-Boy")
+        ).one()
+        team_preventers = session.exec(
+            select(Team).where(Team.name == "Preventers")
+        ).one()
+        hero_spider_boy.team_id = team_preventers.id
+        session.add(hero_spider_boy)
+        session.commit()
+        session.refresh(hero_spider_boy)
+        print("Updated hero:", hero_spider_boy)
+
+
 def main():
     create_db_and_tables()
     create_heroes()
     select_heroes()
+    update_heroes()
 
 
 if __name__ == "__main__":
