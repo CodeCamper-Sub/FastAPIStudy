@@ -6,7 +6,14 @@ class Team(SQLModel, table=True):
     name: str = Field(index=True)
     headquarters: str
 
-    heroes: list["Hero"] = Relationship(back_populates="team")
+    heroes: list["Hero"] = Relationship(
+        back_populates="team", sa_relationship_kwargs={"foreign_keys": "Hero.team_id"}
+    )
+
+    part_time_heroes: list["Hero"] = Relationship(
+        back_populates="sub_team",
+        sa_relationship_kwargs={"foreign_keys": "Hero.sub_team_id"},
+    )
 
 
 class Hero(SQLModel, table=True):
@@ -16,7 +23,14 @@ class Hero(SQLModel, table=True):
     age: int | None = Field(default=None, index=True)
 
     team_id: int | None = Field(default=None, foreign_key="team.id")
-    team: Team | None = Relationship(back_populates="heroes")
+    team: Team | None = Relationship(
+        back_populates="heroes", sa_relationship_kwargs={"foreign_keys": "Hero.team_id"}
+    )
+    sub_team_id: int | None = Field(default=None, foreign_key="team.id")
+    sub_team: Team | None = Relationship(
+        back_populates="part_time_heroes",
+        sa_relationship_kwargs={"foreign_keys": "Hero.sub_team_id"},
+    )
 
 
 sqlite_file_name = "database.db"
@@ -146,6 +160,12 @@ def update_heroes():
         session.refresh(hero_spider_boy)
         print("Spider-Boy after commit:", hero_spider_boy)
         print("Preventers Team Heroes after commit:", preventers_team.heroes)
+
+        # Test Sub Team
+        hero_spider_boy.sub_team = preventers_team
+        print("Preventers Part Time Heroes:", preventers_team.part_time_heroes)
+        session.add(hero_spider_boy)
+        session.commit()
 
 
 def remove_connection():
