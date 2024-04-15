@@ -85,11 +85,24 @@ def update_heroes():
         print("Updated hero:", hero_spider_boy)
 
 
+def remove_connection():
+    with Session(engine) as session:
+        hero_spider_boy = session.exec(
+            select(Hero).where(Hero.name == "Spider-Boy")
+        ).one()
+        hero_spider_boy.team_id = None
+        session.add(hero_spider_boy)
+        session.commit()
+        session.refresh(hero_spider_boy)
+        print("No longer Preventer:", hero_spider_boy)
+
+
 def main():
     create_db_and_tables()
     create_heroes()
     select_heroes()
     update_heroes()
+    remove_connection()
 
 
 if __name__ == "__main__":
