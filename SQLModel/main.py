@@ -74,14 +74,17 @@ def create_heroes():
 
 def select_heroes():
     with Session(engine) as session:
-        # statement = select(Hero, Team).where(Hero.team_id == Team.id)
-        # statement = select(Hero, Team).join(Team, isouter=True)
-        statement = select(Hero).join(Team).where(Team.name == "Preventers")
-        results = session.exec(statement)
-        # for hero, team in results:
-        #     print("Hero:", hero, "Team:", team)
-        for hero in results:
-            print("Hero:", hero, "Team:", hero.team)
+        statement = select(Hero).where(Hero.name == "Spider-Boy")
+        result = session.exec(statement)
+        hero_spider_boy = result.one()
+
+        print("Spider-Boy's team:", hero_spider_boy.team)
+
+        statement = select(Team).where(Team.name == "Preventers")
+        result = session.exec(statement)
+        team_preventers = result.one()
+
+        print("Preventers heroes:", team_preventers.heroes)
 
 
 def update_heroes():
@@ -136,8 +139,8 @@ def remove_connection():
 def main():
     create_db_and_tables()
     create_heroes()
-    select_heroes()
     update_heroes()
+    select_heroes()
     # remove_connection()
 
 
