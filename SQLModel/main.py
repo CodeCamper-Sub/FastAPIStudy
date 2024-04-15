@@ -1,4 +1,9 @@
-from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
+
+
+class HeroTeamLink(SQLModel, table=True):
+    team_id: int | None = Field(default=None, foreign_key="team.id", primary_key=True)
+    hero_id: int | None = Field(default=None, foreign_key="hero.id", primary_key=True)
 
 
 class Team(SQLModel, table=True):
@@ -6,14 +11,7 @@ class Team(SQLModel, table=True):
     name: str = Field(index=True)
     headquarters: str
 
-    heroes: list["Hero"] = Relationship(
-        back_populates="team", sa_relationship_kwargs={"foreign_keys": "Hero.team_id"}
-    )
-
-    part_time_heroes: list["Hero"] = Relationship(
-        back_populates="sub_team",
-        sa_relationship_kwargs={"foreign_keys": "Hero.sub_team_id"},
-    )
+    heroes: list["Hero"] = Relationship(back_populates="teams", link_model=HeroTeamLink)
 
 
 class Hero(SQLModel, table=True):
@@ -22,15 +20,7 @@ class Hero(SQLModel, table=True):
     secret_name: str
     age: int | None = Field(default=None, index=True)
 
-    team_id: int | None = Field(default=None, foreign_key="team.id")
-    team: Team | None = Relationship(
-        back_populates="heroes", sa_relationship_kwargs={"foreign_keys": "Hero.team_id"}
-    )
-    sub_team_id: int | None = Field(default=None, foreign_key="team.id")
-    sub_team: Team | None = Relationship(
-        back_populates="part_time_heroes",
-        sa_relationship_kwargs={"foreign_keys": "Hero.sub_team_id"},
-    )
+    teams: list[Team] = Relationship(back_populates="heroes", link_model=HeroTeamLink)
 
 
 sqlite_file_name = "database.db"
@@ -45,20 +35,23 @@ def create_db_and_tables():
 
 def create_heroes():
     with Session(engine) as session:
-        # Hero 만들면서 Team 넣기
         team_preventers = Team(name="Preventers", headquarters="Sharp Tower")
         team_z_force = Team(name="Z-Force", headquarters="Sister Margaret's Bar")
 
         hero_deadpond = Hero(
-            name="Deadpond", secret_name="Dive Wilson", team=team_z_force
+            name="Deadpond",
+            secret_name="Dive Wilson",
+            teams=[team_z_force, team_preventers],
         )
         hero_rusty_man = Hero(
             name="Rusty-Man",
             secret_name="Tommy Sharp",
             age=48,
-            team=team_preventers,
+            teams=[team_preventers],
         )
-        hero_spider_boy = Hero(name="Spider-Boy", secret_name="Pedro Parqueador")
+        hero_spider_boy = Hero(
+            name="Spider-Boy", secret_name="Pedro Parqueador", teams=[team_preventers]
+        )
         session.add(hero_deadpond)
         session.add(hero_rusty_man)
         session.add(hero_spider_boy)
@@ -68,124 +61,17 @@ def create_heroes():
         session.refresh(hero_rusty_man)
         session.refresh(hero_spider_boy)
 
-        print("Created hero:", hero_deadpond)
-        print("Created hero:", hero_rusty_man)
-        print("Created hero:", hero_spider_boy)
-
-        # Team 만들면서 Hero 넣기
-        hero_black_lion = Hero(name="Black Lion", secret_name="Trevor Challa", age=35)
-        hero_sure_e = Hero(name="Princess Sure-E", secret_name="Sure-E")
-        team_wakaland = Team(
-            name="Wakaland",
-            headquarters="Wakaland Capital City",
-            heroes=[hero_black_lion, hero_sure_e],
-        )
-        session.add(team_wakaland)
-        session.commit()
-        session.refresh(team_wakaland)
-        print("Team Wakaland:", team_wakaland, "Heroes:", team_wakaland.heroes)
-
-
-def select_heroes():
-    with Session(engine) as session:
-        statement = select(Hero).where(Hero.name == "Spider-Boy")
-        result = session.exec(statement)
-        hero_spider_boy = result.one()
-
-        print("Spider-Boy's team:", hero_spider_boy.team)
-
-        statement = select(Team).where(Team.name == "Preventers")
-        result = session.exec(statement)
-        team_preventers = result.one()
-
-        print("Preventers heroes:", team_preventers.heroes)
-
-
-def update_heroes():
-    with Session(engine) as session:
-        # Update Hero
-        hero_spider_boy = session.exec(
-            select(Hero).where(Hero.name == "Spider-Boy")
-        ).one()
-        team_preventers = session.exec(
-            select(Team).where(Team.name == "Preventers")
-        ).one()
-        hero_spider_boy.team = team_preventers
-        session.add(hero_spider_boy)
-        session.commit()
-        session.refresh(hero_spider_boy)
-        print("Updated hero:", hero_spider_boy)
-
-        hero_tarantula = Hero(name="Tarantula", secret_name="Natalia Roman-on", age=32)
-        hero_dr_weird = Hero(name="Dr. Weird", secret_name="Steve Weird", age=36)
-        hero_cap = Hero(
-            name="Captain North America", secret_name="Esteban Rogelios", age=93
-        )
-
-        # Update Team
-        team_preventers.heroes.append(hero_tarantula)
-        team_preventers.heroes.append(hero_dr_weird)
-        team_preventers.heroes.append(hero_cap)
-        session.add(team_preventers)
-        session.commit()
-        session.refresh(team_preventers)
-        session.refresh(hero_tarantula)
-        session.refresh(hero_dr_weird)
-        session.refresh(hero_cap)
-        print("Team Preventer:", team_preventers)
-        print("Preventers new hero:", hero_tarantula)
-        print("Preventers new hero:", hero_dr_weird)
-        print("Preventers new hero:", hero_cap)
-
-        # Test Back Popuplates
-        hero_spider_boy = session.exec(
-            select(Hero).where(Hero.name == "Spider-Boy")
-        ).one()
-        preventers_team = session.exec(
-            select(Team).where(Team.name == "Preventers")
-        ).one()
-        print("Hero Spider-Boy:", hero_spider_boy)
-        print("Preventers Team:", preventers_team)
-        print("Preventers Team Heroes:", preventers_team.heroes)
-
-        hero_spider_boy.team = None
-
-        print("Spider-Boy without team:", hero_spider_boy)
-
-        print("Preventers Team Heroes again:", preventers_team.heroes)
-
-        session.add(hero_spider_boy)
-        session.commit()
-
-        session.refresh(hero_spider_boy)
-        print("Spider-Boy after commit:", hero_spider_boy)
-        print("Preventers Team Heroes after commit:", preventers_team.heroes)
-
-        # Test Sub Team
-        hero_spider_boy.sub_team = preventers_team
-        print("Preventers Part Time Heroes:", preventers_team.part_time_heroes)
-        session.add(hero_spider_boy)
-        session.commit()
-
-
-def remove_connection():
-    with Session(engine) as session:
-        hero_spider_boy = session.exec(
-            select(Hero).where(Hero.name == "Spider-Boy")
-        ).one()
-        hero_spider_boy.team = None
-        session.add(hero_spider_boy)
-        session.commit()
-        session.refresh(hero_spider_boy)
-        print("No longer Preventer:", hero_spider_boy)
+        print("Deadpond:", hero_deadpond)
+        print("Deadpond teams:", hero_deadpond.teams)
+        print("Rusty-Man:", hero_rusty_man)
+        print("Rusty-Man Teams:", hero_rusty_man.teams)
+        print("Spider-Boy:", hero_spider_boy)
+        print("Spider-Boy Teams:", hero_spider_boy.teams)
 
 
 def main():
     create_db_and_tables()
     create_heroes()
-    update_heroes()
-    # select_heroes()
-    # remove_connection()
 
 
 if __name__ == "__main__":
