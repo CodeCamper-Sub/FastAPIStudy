@@ -27,84 +27,40 @@ def create_db_and_tables():
 
 
 def create_heroes():
-    hero_1 = Hero(name="Deadpond", secret_name="Dive Wilson")
-    hero_2 = Hero(name="Spider-Boy", secret_name="Pedro Parqueador")
-    hero_3 = Hero(name="Rusty-Man", secret_name="Tommy Sharp", age=48)
-    hero_4 = Hero(name="Tarantula", secret_name="Natalia Roman-on", age=32)
-    hero_5 = Hero(name="Black Lion", secret_name="Trevor Challa", age=35)
-    hero_6 = Hero(name="Dr. Weird", secret_name="Steve Weird", age=36)
-    hero_7 = Hero(name="Captain North America", secret_name="Esteban Rogelios", age=93)
-
     with Session(engine) as session:
-        session.add(hero_1)
-        session.add(hero_2)
-        session.add(hero_3)
-        session.add(hero_4)
-        session.add(hero_5)
-        session.add(hero_6)
-        session.add(hero_7)
-
+        team_preventers = Team(name="Preventers", headquarters="Sharp Tower")
+        team_z_force = Team(name="Z-Force", headquarters="Sister Margaret's Bar")
+        session.add(team_preventers)
+        session.add(team_z_force)
         session.commit()
 
-
-def select_heroes():
-    with Session(engine) as session:
-        statement = select(Hero).where(Hero.age > 32).offset(1).limit(2)
-        for hero in session.exec(statement).all():
-            print(hero)
-
-
-def update_heroes():
-    with Session(engine) as session:
-        statement = select(Hero).where(Hero.name == "Spider-Boy")
-        results = session.exec(statement)
-        hero_1 = results.one()
-        print("Hero 1:", hero_1)
-
-        statement = select(Hero).where(Hero.name == "Captain North America")
-        results = session.exec(statement)
-        hero_2 = results.one()
-        print("Hero 2:", hero_2)
-
-        hero_1.age = 16
-        hero_1.name = "Spider-Youngster"
-        session.add(hero_1)
-
-        hero_2.name = "Captain North America Except Canada"
-        hero_2.age = 110
-        session.add(hero_2)
-
-        session.commit()
-        session.refresh(hero_1)
-        session.refresh(hero_2)
-
-        print("Updated hero 1:", hero_1)
-        print("Updated hero 2:", hero_2)
-
-
-def delete_heroes():
-    with Session(engine) as session:
-        hero = session.exec(select(Hero).where(Hero.name == "Spider-Youngster")).one()
-        print("Hero: ", hero)
-
-        session.delete(hero)
+        hero_deadpond = Hero(
+            name="Deadpond", secret_name="Dive Wilson", team_id=team_z_force.id
+        )
+        hero_rusty_man = Hero(
+            name="Rusty-Man",
+            secret_name="Tommy Sharp",
+            age=48,
+            team_id=team_preventers.id,
+        )
+        hero_spider_boy = Hero(name="Spider-Boy", secret_name="Pedro Parqueador")
+        session.add(hero_deadpond)
+        session.add(hero_rusty_man)
+        session.add(hero_spider_boy)
         session.commit()
 
-        print("Delete hero: ", hero)
+        session.refresh(hero_deadpond)
+        session.refresh(hero_rusty_man)
+        session.refresh(hero_spider_boy)
 
-        hero = session.exec(select(Hero).where(Hero.name == "Spider-Youngster")).first()
-        print("Hero: ", hero)
-
-        if hero is None:
-            print("There's no hero name Spider-Youngster")
+        print("Created hero:", hero_deadpond)
+        print("Created hero:", hero_rusty_man)
+        print("Created hero:", hero_spider_boy)
 
 
 def main():
     create_db_and_tables()
     create_heroes()
-    select_heroes()
-    update_heroes()
-    delete_heroes()
 
 
 if __name__ == "__main__":
