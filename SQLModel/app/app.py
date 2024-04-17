@@ -1,8 +1,7 @@
 from sqlmodel import Session
 
 from .database import create_db_and_tables, engine
-from .hero_model import Hero
-from .team_model import Team
+from .models import Hero, Team
 
 
 def create_heroes():
